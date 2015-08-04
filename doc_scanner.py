@@ -5,28 +5,30 @@ import cv2
 import argparse
 from skimage.filter import threshold_adaptive
 
+
 def order_points(pts):
     # initialzie a list of coordinates that will be ordered
     # such that the first entry in the list is the top-left,
     # the second entry is the top-right, the third is the
     # bottom-right, and the fourth is the bottom-left
-    rect = np.zeros((4, 2), dtype = "float32")
+    rect = np.zeros((4, 2), dtype="float32")
 
     # the top-left point will have the smallest sum, whereas
     # the bottom-right point will have the largest sum
-    s = pts.sum(axis = 1)
+    s = pts.sum(axis=1)
     rect[0] = pts[np.argmin(s)]
     rect[2] = pts[np.argmax(s)]
 
     # now, compute the difference between the points, the
     # top-right point will have the smallest difference,
     # whereas the bottom-left will have the largest difference
-    diff = np.diff(pts, axis = 1)
+    diff = np.diff(pts, axis=1)
     rect[1] = pts[np.argmin(diff)]
     rect[3] = pts[np.argmax(diff)]
 
     # return the ordered coordinates
     return rect
+
 
 def four_point_transform(image, pts):
     # obtain a consistent order of the points and unpack them
@@ -57,7 +59,7 @@ def four_point_transform(image, pts):
         [0, 0],
         [maxWidth - 1, 0],
         [maxWidth - 1, maxHeight - 1],
-        [0, maxHeight - 1]], dtype = "float32")
+        [0, maxHeight - 1]], dtype="float32")
 
     # compute the perspective transform matrix and then apply it
     M = cv2.getPerspectiveTransform(rect, dst)
@@ -69,8 +71,8 @@ def four_point_transform(image, pts):
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required = True,
-                help = "Path to the image to be scanned")
+ap.add_argument("-i", "--image", required=True,
+                help="Path to the image to be scanned")
 args = vars(ap.parse_args())
 
 # load the image and compute the ratio of the old height
@@ -95,8 +97,10 @@ cv2.destroyAllWindows()
 
 # find the contours in the edged image, keeping only the
 # largest ones, and initialize the screen contour
-(cnts, _) = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:5]
+(cnts, _) = cv2.findContours(edged.copy(),
+                             cv2.RETR_LIST,
+                             cv2.CHAIN_APPROX_SIMPLE)
+cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
 
 # loop over the contours
 for c in cnts:
@@ -125,7 +129,7 @@ warped = four_point_transform(orig, screenCnt.reshape(4, 2))
 # convert the warped image to grayscale, then threshold it
 # to give it that 'black and white' paper effect
 warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-warped = threshold_adaptive(warped, 250, offset = 10)
+warped = threshold_adaptive(warped, 250, offset=10)
 warped = warped.astype("uint8") * 255
 
 # show the original and scanned images
@@ -136,4 +140,3 @@ cv2.imshow("Original", orig)
 cv2.imshow("Scanned", warped)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-
